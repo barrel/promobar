@@ -3,6 +3,13 @@
   "version": "0.0.1",
   "description": "A lightweight and easily configurable promo bar in ES6.",
   "author": "barrelny",
+  "contributors": [
+    {
+      "name": "estrattonbailey",
+      "email": "eric.bailey@barrelny.com",
+      "url": "https://github.com/estrattonbailey"
+    }
+  ],
   "main": "./src/index.js",
   "scripts": {
     "browser": "mkdir -p browser && browserify src/index.js --standalone promobar -p [minifyify --no-map] src/index.js > browser/index.js",
