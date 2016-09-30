@@ -151,7 +151,9 @@ export default (root, opts = {}) => {
       state.enabled = enabled(now()) 
     }
 
-    // Reset offsets, remove active classes
+    /**
+     * Reset offsets, remove active classes
+     */
     offset()
     root.classList.remove('is-active')
     document.body.classList.remove('promobar-is-active')
