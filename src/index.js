@@ -141,10 +141,15 @@ export default (root, opts = {}) => {
     events.emit('show', state)
   }
 
-  const hide = () => {
+  const hide = (force = false) => {
     if (!state.enabled){ return }
 
     state.active = false
+
+    if (force){
+      store(config.content)
+      state.enabled = enabled(now()) 
+    }
 
     // Reset offsets, remove active classes
     offset()

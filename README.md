@@ -55,6 +55,10 @@ Hide the promo bar.
 ```javascript
 promobar.hide()
 ```
+Hide and cache the data to prevent the bar from showing until it expires.
+```javascript
+promobar.hide(true)
+```
 
 #### .on()
 Attach event handlers
