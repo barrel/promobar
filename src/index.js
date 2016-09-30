@@ -1,7 +1,9 @@
 import stockpile from 'stockpile.js'
 import loop from 'loop.js'
 
-const storage = stockpile('__promo__')
+const storage = stockpile('promobar')
+
+const now = () => new Date().getTime()
 
 const height = el => Math.max(el.offsetHeight, el.scrollHeight, el.clientHeight)
 
@@ -15,87 +17,81 @@ const store = content => storage.set('root', {
   body: content
 })
 
-const isEnabled = (time, lifespan, body) => {
+const isEnabled = (lifespan, body) => now => {
   let store = storage.get('root')
   let day = 1000*60*60*24
 
   if (!store) return true
 
-  let daysPassed = (time - store.timestamp) / day
+  let time = (now - store.timestamp) / day
 
-  return store.body !== body || daysPassed >= lifespan ? true : false 
+  return store.body !== body || time >= lifespan ? true : false 
 }
 
 const createPlaceholder = () => {
   let div = document.createElement('div')
-  div.className = 'promo-placeholder'
+  div.className = 'promobar-placeholder'
   div.style.height = '0px'
   document.body.insertBefore(div, document.body.children[0])
   return div
 }
 
-const style = document.createElement('style')
-document.body.insertBefore(style, document.body.children[0])
-
-const css = (target, height = null) => {
-  target.setAttribute('data-promo', height)
-  style.innerHTML = `[data-promo] { ${height ? `transform: translateY(${height}px) }` : '' }`
+const createStyle = () => {
+  let style = document.createElement('style')
+  document.body.insertBefore(style, document.body.children[0])
+  return style
 }
 
-/**
- * Apply transforms to all 
- * specified elements
- *
- * @param {array} nodes DOM nodes to apply transforms to
- * @param {number} height Distance to displace elements
- */
-const displace = (targets, height = null) => targets.forEach(t => {
+const addAttributes = targets => targets.forEach(t => {
   if (Array.isArray(t)){
-    !!t[1]() ? css(t[0], height ? height : null) : css(t[0])
+    !!t[1]() ? t[0].setAttribute('data-promobar', 'true') : t.removeAttribute('data-promobar') 
   } else {
-    css(t, height ? height : null)
+    t.setAttribute('data-promobar', 'true') 
   }
 })
 
-const offset = (target, check, height = null) => {
-  check = 'function' === typeof check ? check() : check
-  target.style.height = check ? `${height ? height : 0}px` : '0px'
+const offsetPlaceholder = (target, check, height = null) => {
+  if ('function' === typeof check ? check() : check){
+    target.style.height = height ? `${height}px` : '0px'
+  } else {
+    target.style.height = '0px'
+  }
 }
 
-export default (promo, opts = {}) => {
-  const state = { 
-    active: false, 
-    enabled: true,
-    height: height(promo) 
-  }
-  const content = promo.querySelector('.js-content').innerHTML
+export default (root, opts = {}) => {
   const placeholder = createPlaceholder()
+  const style = createStyle()
   const events = loop()
   const config = merge({
+    content: document.getElementById('promobarContent').innerHTML,
     resize: true,
-    offset: true,
-    displace: [],
-    close: Array.prototype.slice.call(document.querySelectorAll('.js-promo-close')),
+    placeholder: true,
+    offsets: [],
+    close: Array.prototype.slice.call(document.querySelectorAll('.js-promobarClose')),
     lifespan: 1
   }, opts)
-
-  const checkIfEnabled = () => {
-    state.enabled = isEnabled(new Date().getTime(), config.lifespan, content) 
-    return state.enabled
+  const enabled = isEnabled(config.lifespan, config.content)
+  const state = { 
+    active: false, 
+    enabled: enabled(now()),
+    height: height(root) 
   }
 
-  const render = (height = null) => {
-    offset(placeholder, config.offset, height)
-    displace(config.displace, height)
+  const offset = (height = null) => {
+    offsetPlaceholder(placeholder, config.placeholder, height)
+    addAttributes(config.offsets)
+    style.innerHTML = `[data-promobar] { ${height ? `transform: translateY(${height}px) }` : '}' }`
   }
 
   const show = () => {
     if (!state.enabled){ return }
 
     state.active = true 
-    render(state.height)
-    promo.classList.add('is-active')
-    document.body.classList.add('promo-is-active')
+
+    offset(state.height)
+    root.classList.add('is-active')
+    document.body.classList.add('promobar-is-active')
+
     events.emit('show', state)
   }
 
@@ -103,29 +99,29 @@ export default (promo, opts = {}) => {
     if (!state.enabled){ return }
 
     state.active = false
-    render()
-    promo.classList.remove('is-active')
-    document.body.classList.remove('promo-is-active')
+
+    offset()
+    root.classList.remove('is-active')
+    document.body.classList.remove('promobar-is-active')
+
     events.emit('hide', state)
   }
 
   const update = (force = false) => {
-    checkIfEnabled()
-
     if (!state.enabled){ return }
 
-    let h = height(promo)
+    let h = height(root)
 
     if (force || h !== state.height){
       state.height = h 
-      state.active ? render(h) : show()
+      state.active ? offset(h) : show()
       events.emit('update', state)
     } 
   }
 
   const reset = () => {
     storage.remove('root')
-    checkIfEnabled() 
+    state.enabled = enabled(now()) 
   }
 
   config.resize ? window.addEventListener('resize', e => update()) : null
@@ -133,11 +129,10 @@ export default (promo, opts = {}) => {
   config.close.forEach(t => t.addEventListener('click', e => {
     e.preventDefault()
     hide()
-    store(content)
-    checkIfEnabled() 
+    store(config.content)
+    state.enabled = enabled(now()) 
+    events.emit('disabled', state)
   }))
-
-  checkIfEnabled()
 
   return {
     ...events,
