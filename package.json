@@ -1,7 +1,7 @@
 {
   "name": "promobar",
   "version": "0.0.1",
-  "description": "Promo bar",
+  "description": "A lightweight and easily configurable promo bar in ES6.",
   "author": "barrelny",
   "main": "./src/index.js",
   "scripts": {
