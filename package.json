@@ -1,11 +1,11 @@
 {
-  "name": "promo",
+  "name": "promobar",
   "version": "0.0.1",
   "description": "Promo bar",
   "author": "barrelny",
   "main": "./src/index.js",
   "scripts": {
-    "browser": "mkdir -p browser && browserify src/index.js --standalone promo -p [minifyify --no-map] src/index.js > browser/index.js",
+    "browser": "mkdir -p browser && browserify src/index.js --standalone promobar -p [minifyify --no-map] src/index.js > browser/index.js",
     "watch": "watchify test/dev.js -v -d -o test/index.js",
     "test": "ava test/test.js -v",
     "size": "bundle-size ./browser/index.js"
@@ -47,7 +47,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:barrel/untitled-promo.git"
+    "url": "git@github.com:barrel/promobar.git"
   },
   "license": "MIT"
 }

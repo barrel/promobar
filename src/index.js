@@ -12,20 +12,8 @@ const merge = (target, ...args) => {
   return target
 }
 
-const store = content => storage.set('root', {
-  timestamp: new Date().getTime(),
-  body: content
-})
-
-const isEnabled = (lifespan, body) => now => {
-  let store = storage.get('root')
-  let day = 1000*60*60*24
-
-  if (!store) return true
-
-  let time = (now - store.timestamp) / day
-
-  return store.body !== body || time >= lifespan ? true : false 
+const error = {
+  content: () => console.warn('promobar: content is undefined')
 }
 
 const createPlaceholder = () => {
@@ -42,26 +30,60 @@ const createStyle = () => {
   return style
 }
 
+/**
+ * Add content to localStorage with timestamp
+ * @param {string} content Content of promo bar
+ */
+const store = content => storage.set('root', {
+  timestamp: new Date().getTime(),
+  body: content
+})
+
+/**
+ * Curried function: check if bar is enabled
+ * @param {number} now Current time in milliseconds 
+ * @return {boolean} if bar is eligible to be shown
+ */
+const isEnabled = (lifespan, body) => now => {
+  let store = storage.get('root')
+  let day = 1000*60*60*24
+
+  if (!store) return true
+
+  let time = (now - store.timestamp) / day
+
+  return store.body !== body || time >= lifespan ? true : false 
+}
+
+/**
+ * Add data-promobar attributes to elements,
+ * providing they pass their optional checks
+ */
 const addAttributes = targets => targets.forEach(t => {
+  if (!t){ return }
+
   if (Array.isArray(t)){
-    !!t[1]() ? t[0].setAttribute('data-promobar', 'true') : t.removeAttribute('data-promobar') 
+    !!t[1]() ? t[0].setAttribute('data-promobar', 'true') : t[0].removeAttribute('data-promobar') 
   } else {
     t.setAttribute('data-promobar', 'true') 
   }
 })
 
-const offsetPlaceholder = (target, check, height = null) => {
-  if ('function' === typeof check ? check() : check){
-    target.style.height = height ? `${height}px` : '0px'
-  } else {
-    target.style.height = '0px'
-  }
-}
+/**
+ * Set height of placeholder element
+ */
+const offsetPlaceholder = (target, height = null) => target.style.height = height ? `${height}px` : '0px'
 
 export default (root, opts = {}) => {
-  const placeholder = createPlaceholder()
-  const style = createStyle()
+
+  /**
+   * Emitter
+   */
   const events = loop()
+
+  /**
+   * Merge options with defaults
+   */
   const config = merge({
     content: document.getElementById('promobarContent').innerHTML,
     resize: true,
@@ -70,17 +92,40 @@ export default (root, opts = {}) => {
     close: Array.prototype.slice.call(document.querySelectorAll('.js-promobarClose')),
     lifespan: 1
   }, opts)
+
+  if (!config.content){ return error.content() }
+
+  /**
+   * Boolean values and helpers
+   */
   const enabled = isEnabled(config.lifespan, config.content)
+  const usePlaceholder = () => 'function' === typeof config.placeholder ? config.placeholder() : config.placeholder
+  const useOffsets = config.offsets.length > 0 ? true : false
+
+  /**
+   * Generated elements
+   */
+  const placeholder = usePlaceholder() ? createPlaceholder() : null 
+  const style = useOffsets ? createStyle() : null
+
   const state = { 
     active: false, 
     enabled: enabled(now()),
     height: height(root) 
   }
 
+  /**
+   * Set height of placeholder element
+   * Set styles for other offset elements
+   * @param {number} height Height in pixels of the promo bar
+   */
   const offset = (height = null) => {
-    offsetPlaceholder(placeholder, config.placeholder, height)
-    addAttributes(config.offsets)
-    style.innerHTML = `[data-promobar] { ${height ? `transform: translateY(${height}px) }` : '}' }`
+    usePlaceholder() && offsetPlaceholder(placeholder, height)
+
+    if (useOffsets){
+      addAttributes(config.offsets)
+      style.innerHTML = `[data-promobar] { ${height ? `transform: translateY(${height}px) }` : '}' }`
+    }
   }
 
   const show = () => {
@@ -88,6 +133,7 @@ export default (root, opts = {}) => {
 
     state.active = true 
 
+    // Set offsets, add active classes
     offset(state.height)
     root.classList.add('is-active')
     document.body.classList.add('promobar-is-active')
@@ -100,6 +146,7 @@ export default (root, opts = {}) => {
 
     state.active = false
 
+    // Reset offsets, remove active classes
     offset()
     root.classList.remove('is-active')
     document.body.classList.remove('promobar-is-active')
@@ -107,6 +154,9 @@ export default (root, opts = {}) => {
     events.emit('hide', state)
   }
 
+  /**
+   * @param {boolean} force Force recalculation of offsets
+   */
   const update = (force = false) => {
     if (!state.enabled){ return }
 
@@ -119,6 +169,9 @@ export default (root, opts = {}) => {
     } 
   }
 
+  /**
+   * Clear storage, set state.enabled
+   */
   const reset = () => {
     storage.remove('root')
     state.enabled = enabled(now()) 
@@ -126,6 +179,10 @@ export default (root, opts = {}) => {
 
   config.resize ? window.addEventListener('resize', e => update()) : null
 
+  /**
+   * On close, store content to await expiration
+   * update state.enabled
+   */
   config.close.forEach(t => t.addEventListener('click', e => {
     e.preventDefault()
     hide()
