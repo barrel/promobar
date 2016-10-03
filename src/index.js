@@ -120,7 +120,7 @@ export default (root, opts = {}) => {
    * @param {number} height Height in pixels of the promo bar
    */
   const offset = (height = null) => {
-    usePlaceholder() && offsetPlaceholder(placeholder, height)
+    usePlaceholder() ? offsetPlaceholder(placeholder, height) : offsetPlaceholder(placeholder)
 
     if (useOffsets){
       addAttributes(config.offsets)
