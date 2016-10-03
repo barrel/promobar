@@ -105,7 +105,7 @@ export default (root, opts = {}) => {
   /**
    * Generated elements
    */
-  const placeholder = usePlaceholder() ? createPlaceholder() : null 
+  const placeholder = createPlaceholder() 
   const style = useOffsets ? createStyle() : null
 
   const state = { 
