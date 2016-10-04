@@ -85,7 +85,7 @@ export default (root, opts = {}) => {
    * Merge options with defaults
    */
   const config = merge({
-    content: document.getElementById('promobarContent').innerHTML,
+    content: (root.querySelector('.js-content') || root).innerHTML,
     resize: true,
     placeholder: true,
     offsets: [],
