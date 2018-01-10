@@ -1,9 +1,9 @@
-# promobar 
-A lightweight and easily configurable promo bar in ES6. 
+# promobar
+A lightweight and easily configurable promo bar with support for expiration using `localStorage`.
 
-**~1.94kb gzipped**
+**~1.77kb gzipped**
 
-## Install 
+## Install
 ```bash
 npm i promobar --save
 ```
@@ -100,10 +100,6 @@ Promobar emits a few lifecycle events. All callbacks receive a state object.
 - `disabled` - when a user closes the bar 
 
 ## Markup and Styles 
-Please see `src/promobar.html` and `src/promobar.scss` for **suggested** markup and styles. 
-
-## TODO 
-1. Very tests
-2. Much QA
+Please see `lib/promobar.html` and `lib/promobar.scss` for **suggested** markup and styles. 
 
 MIT License
