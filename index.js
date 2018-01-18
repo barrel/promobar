@@ -1,5 +1,5 @@
 import stockpile from 'stockpile.js'
-import loop from 'loop.js'
+import mitt from 'mitt'
 
 const storage = stockpile('promobar')
 
@@ -79,7 +79,7 @@ export default (root, opts = {}) => {
   /**
    * Emitter
    */
-  const events = loop()
+  const events = mitt()
 
   /**
    * Merge options with defaults
@@ -198,12 +198,11 @@ export default (root, opts = {}) => {
     events.emit('disabled', state)
   }))
 
-  return {
-    ...events,
+  return Object.assign(events, {
     hide,
     show,
     update,
     reset,
     getState: () => state
-  }
+  })
 }
